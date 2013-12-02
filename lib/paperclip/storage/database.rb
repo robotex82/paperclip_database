@@ -56,82 +56,45 @@ module Paperclip
     #
     module Database
 
-      def self.extended(base)
-        base.instance_eval do
-          setup_paperclip_files_model
-          override_default_options base
+      def self.extended(paperclip_internal_attachment_class)
+        paperclip_internal_attachment_class.instance_eval do
+          attachable_class = instance.class
+          setup_relation_in_attachable_class(attachable_class)
+          override_default_options
         end
-        Paperclip.interpolates(:database_path) do |attachment, style|
-          attachment.database_path(style)
-        end
-        Paperclip.interpolates(:relative_root) do |attachment, style|
-          begin
-            if ActionController::AbstractRequest.respond_to?(:relative_url_root)
-              relative_url_root = ActionController::AbstractRequest.relative_url_root
-            end
-          rescue NameError
-          end
-          if !relative_url_root && ActionController::Base.respond_to?(:relative_url_root)
-            ActionController::Base.relative_url_root
-          end
-        end
-
-        ActiveRecord::Base.logger.info("[paperclip] Database Storage Initalized.")
       end
 
-      def setup_paperclip_files_model
-        # If the model is in a namespace, look up that module
-        if instance.class.name.include?('::')
-          module_name = PaperclipDatabase::deconstantize(instance.class.name)
-          @paperclip_class_module = module_name.constantize rescue Object
-        else
-          @paperclip_class_module = Object
-        end
-
-        @paperclip_files = "#{instance.class.name.demodulize.underscore}_#{name.to_s}_paperclip_files"
-        if !@paperclip_class_module.const_defined?(@paperclip_files.classify)
-          @paperclip_file = @paperclip_class_module.const_set(@paperclip_files.classify, Class.new(::ActiveRecord::Base))
-          @paperclip_file.table_name = @options[:database_table] || name.to_s.pluralize
-          @paperclip_file.validates_uniqueness_of :style, :scope => instance.class.table_name.classify.underscore + '_id'
-          @paperclip_file.scope :file_for, lambda {|style| @paperclip_file.where('style = ?', style) }
-        else
-          @paperclip_file = @paperclip_class_module.const_get(@paperclip_files.classify)
-        end
-        @database_table = @paperclip_file.table_name
-        #FIXME: This fails when using  set_table_name "<myname>" in your model
-        #FIXME: This should be fixed in ActiveRecord...
-        instance.class.has_many @paperclip_files.to_sym, :class_name => @paperclip_file.name, :foreign_key => instance.class.table_name.classify.underscore + '_id'
-      end
-      private :setup_paperclip_files_model
-
-      def copy_to_local_file(style, dest_path)
-        File.open(dest_path, 'wb+'){|df| to_file(style).tap{|sf| File.copy_stream(sf, df); sf.close;sf.unlink} }
+      def setup_relation_in_attachable_class(klass)
+        klass.has_many :paperclip_database_files, as: :attachable, dependent: :destroy,
+                       class_name: PaperclipDatabase::PaperclipDatabaseFile.to_s
       end
 
-      def override_default_options(base)
-        if @options[:url] == base.class.default_options[:url]
-          @options[:url] = ":relative_root/:class/:attachment/:id?style=:style"
-        end
+      private :setup_relation_in_attachable_class
+
+      def override_default_options
+        @options[:url] = ":relative_root/:class/:attachment/:id?style=:style" if (@options[:url] == self.class.default_options[:url])
         @options[:path] = ":database_path"
       end
+
       private :override_default_options
 
-      def database_table
-        @database_table
+
+      def copy_to_local_file(style, dest_path)
+        File.open(dest_path, 'wb+') { |df| to_file(style).tap { |sf| File.copy_stream(sf, df); sf.close; sf.unlink } }
       end
 
       def database_path(style)
         paperclip_file = file_for(style)
         if paperclip_file
-          "#{database_table}(id=#{paperclip_file.id},style=#{style.to_s})"
+          "paperclip_files(id=#{paperclip_file.id},style=#{style.to_s})"
         else
-          "#{database_table}(id=new,style=#{style.to_s})"
+          "paperclip_files(id=new,style=#{style.to_s})"
         end
       end
 
       def exists?(style = default_style)
         if original_filename
-          instance.send("#{@paperclip_files}").where(:style => style).exists?
+          instance.paperclip_database_files.where(:style => style).exists?
         else
           false
         end
@@ -154,6 +117,7 @@ module Paperclip
         end
 
       end
+
       alias_method :to_io, :to_file
 
       def file_for(style)
@@ -169,14 +133,14 @@ module Paperclip
       def flush_writes
         ActiveRecord::Base.logger.info("[paperclip] Writing files for #{name}")
         @queued_for_write.each do |style, file|
-            case Rails::VERSION::STRING
+          case Rails::VERSION::STRING
             when /^3/
               paperclip_file = instance.send(@paperclip_files).send(:find_or_create_by_style, style.to_s)
             when /^4/
               paperclip_file = instance.send(@paperclip_files).send(:find_or_create_by, style: style.to_s)
             else
               raise "Rails version #{Rails::VERSION::STRING} is not supported (yet)"
-            end
+          end
           paperclip_file.file_contents = file.read
           paperclip_file.save!
           instance.reload
@@ -202,6 +166,7 @@ module Paperclip
         def self.included(base)
           base.extend(self)
         end
+
         def downloads_files_for(model, attachment, options = {})
           define_method("#{attachment.to_s.pluralize}") do
             model_record = Object.const_get(model.to_s.camelize.to_sym).find(params[:id])
@@ -214,4 +179,5 @@ module Paperclip
       end
     end
   end
+
 end

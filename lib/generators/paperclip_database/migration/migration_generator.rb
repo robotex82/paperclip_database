@@ -3,15 +3,9 @@ require 'rails/generators/active_record'
 module PaperclipDatabase
   module Generators
     class MigrationGenerator < ActiveRecord::Generators::Base
-      desc "Create a migration to add database storage for the paperclip database storage." +
-        "The NAME argument is the name of your model, and the following " +
-        "arguments are the name of the attachments"
+      desc "Create a migration to add database storage for the paperclip database storage. " +
+           "run: rails generate paperclip_database:migration install"
 
-      argument :attachment_names,
-      :required => true,
-      :type => :array,
-      :desc => "The names of the attachment(s) to add.",
-      :banner => "attachment_one attachment_two attachment_three ..."
 
       def self.source_root
         @source_root ||= File.expand_path('../templates', __FILE__)
@@ -21,10 +15,15 @@ module PaperclipDatabase
         migration_template "migration.rb.erb", "db/migrate/#{migration_file_name}"
       end
 
+
       protected
 
+      def table_name
+        'paperclip_database_files'
+      end
+
       def migration_name
-        "create_#{name.underscore.tr('/', '_')}_#{attachment_names.map{|n| n.pluralize}.join('_and_')}"
+        "create_table_#{table_name}"
       end
 
       def migration_file_name
