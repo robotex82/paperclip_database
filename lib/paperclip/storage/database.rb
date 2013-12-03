@@ -86,9 +86,9 @@ module Paperclip
       def database_path(style)
         paperclip_file = file_for(style)
         if paperclip_file
-          "paperclip_database_files(id=#{paperclip_file.id},style=#{style.to_s})"
+          "paperclip_database_files(id=#{paperclip_file.id},style=#{style},attachable_name=#{name})"
         else
-          "paperclip_database_files(id=new,style=#{style.to_s})"
+          "paperclip_database_files(id=new,style=#{style},attachable_name=#{name})"
         end
       end
 
@@ -102,7 +102,7 @@ module Paperclip
 
       # Returns representation of the data of the file assigned to the given
       # style, in the format most representative of the current storage.
-      def to_file style = default_style
+      def to_file(style = default_style)
         if @queued_for_write[style]
           @queued_for_write[style]
         elsif exists?(style)
@@ -121,8 +121,8 @@ module Paperclip
       alias_method :to_io, :to_file
 
       def file_for(style)
-        db_result = instance.send("#{@paperclip_files}").send(:file_for, style.to_s)
-        raise RuntimeError, "More than one result for #{style}" if db_result.size > 1
+        db_result = instance.paperclip_database_files.send(:file_for, style, name)
+        raise RuntimeError, "More than one result for #{name}(#{style})" if db_result.size > 1
         db_result.first
       end
 
@@ -143,7 +143,6 @@ module Paperclip
           end
           paperclip_file.file_contents = file.read
           paperclip_file.save!
-          instance.reload
         end
         @queued_for_write = {}
       end
@@ -152,12 +151,8 @@ module Paperclip
         ActiveRecord::Base.logger.info("[paperclip] Deleting files for #{name}")
         @queued_for_delete.uniq! ##This is apparently necessary for paperclip v 3.x
         @queued_for_delete.each do |path|
-          /id=([0-9]+)/.match(path)
-          if @options[:cascade_deletion] && !instance.class.exists?(instance.id)
-            raise RuntimeError, "Deletion has not been done by through cascading." if @paperclip_file.exists?($1)
-          else
-            @paperclip_file.destroy $1
-          end
+          paperclip_database_file_id = path.match(/id=([0-9]+)/)[1]
+          instance.paperclip_database_files.destroy(paperclip_database_file_id)
         end
         @queued_for_delete = []
       end
