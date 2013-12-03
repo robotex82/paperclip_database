@@ -64,21 +64,6 @@ module Paperclip
         end
       end
 
-      def setup_relation_in_attachable_class(klass)
-        klass.has_many :paperclip_database_files, as: :attachable, dependent: :destroy,
-                       class_name: PaperclipDatabase::PaperclipDatabaseFile.to_s
-      end
-
-      private :setup_relation_in_attachable_class
-
-      def override_default_options
-        @options[:url] = ":relative_root/:class/:attachment/:id?style=:style" if (@options[:url] == self.class.default_options[:url])
-        @options[:path] = ":database_path"
-      end
-
-      private :override_default_options
-
-
       def copy_to_local_file(style, dest_path)
         File.open(dest_path, 'wb+') { |df| to_file(style).tap { |sf| File.copy_stream(sf, df); sf.close; sf.unlink } }
       end
@@ -155,6 +140,19 @@ module Paperclip
           instance.paperclip_database_files.destroy(paperclip_database_file_id)
         end
         @queued_for_delete = []
+      end
+
+
+      private
+
+      def setup_relation_in_attachable_class(klass)
+        klass.has_many :paperclip_database_files, as: :attachable, dependent: :destroy,
+                       class_name: PaperclipDatabase::PaperclipDatabaseFile.to_s
+      end
+
+      def override_default_options
+        @options[:url] = ":relative_root/:class/:attachment/:id?style=:style" if (@options[:url] == self.class.default_options[:url])
+        @options[:path] = ":database_path"
       end
 
       module ControllerClassMethods
