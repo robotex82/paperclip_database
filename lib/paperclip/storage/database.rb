@@ -86,15 +86,15 @@ module Paperclip
       def database_path(style)
         paperclip_file = file_for(style)
         if paperclip_file
-          "paperclip_files(id=#{paperclip_file.id},style=#{style.to_s})"
+          "paperclip_database_files(id=#{paperclip_file.id},style=#{style.to_s})"
         else
-          "paperclip_files(id=new,style=#{style.to_s})"
+          "paperclip_database_files(id=new,style=#{style.to_s})"
         end
       end
 
       def exists?(style = default_style)
         if original_filename
-          instance.paperclip_database_files.where(:style => style).exists?
+          instance.paperclip_database_files.where(style: style, attachable_name: name).exists?
         else
           false
         end
@@ -135,9 +135,9 @@ module Paperclip
         @queued_for_write.each do |style, file|
           case Rails::VERSION::STRING
             when /^3/
-              paperclip_file = instance.send(@paperclip_files).send(:find_or_create_by_style, style.to_s)
+              paperclip_file = instance.paperclip_database_files.send(:find_or_create_by_style_and_attachable_name, style, name)
             when /^4/
-              paperclip_file = instance.send(@paperclip_files).send(:find_or_create_by, style: style.to_s)
+              paperclip_file = instance.paperclip_database_files.send(:find_or_create_by, style: style, attachable_name: name)
             else
               raise "Rails version #{Rails::VERSION::STRING} is not supported (yet)"
           end
