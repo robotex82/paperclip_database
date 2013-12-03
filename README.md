@@ -71,17 +71,7 @@ the extra table.
 
 On the console (rails 3):
 
-    bundle exec ./script/rails generate paperclip_database:migration User avatar
-
-The generated migration should be sufficient, but you may consider
-adding additional code to the migration such as `t.timestamps` for
-adding standard rails timesstamps or a referential database
-constraint, or an index on the foreign key id column. If you add a
-refferential constraint with the option `ON DELETE CASCADE`, then you
-need to add the option `:cascade_deletion => true` to your paperclip
-`has_attached_file` declaration to let PaperclipDatabase know that the
-Database takes care of it. Otherwise PaperclipDatabase will do the
-cascade deletion.
+    rails generate paperclip_database:migration install
 
 Development
 -----------
@@ -100,7 +90,6 @@ When downloaded, you can start issuing the commands like
 Or you can see what other options are there:
 
     bundle exec rake -T
-
 
 History
 -------

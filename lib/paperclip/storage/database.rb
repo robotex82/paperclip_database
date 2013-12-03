@@ -7,27 +7,16 @@ module Paperclip
     # 1. In your model specify the "database" storage option; for example:
     #   has_attached_file :avatar, :storage => :database
     #
-    # The files will be stored in a new database table named with the plural attachment name
-    # by default, "avatars" in this example.
+    # The files will be stored in a new database table named 'paperclip_database_files'.
     #
-    # 2. You need to create this new storage table with at least these columns:
-    #   - file_contents
-    #   - style
-    #   - the primary key for the parent model (e.g. user_id)
+    # 2. You need to create this new storage table by running generator:
+    #   `rails generate paperclip_database:migration install`
     #
     # Note the "binary" migration will not work for the LONGBLOG type in MySQL for the
     # file_cotents column. You may need to craft a SQL statement for your migration,
     # depending on which database server you are using. Here's an example migration for MySQL:
     #
-    # create_table :avatars do |t|
-    #   t.string :style
-    #   t.integer :user_id
-    #   t.timestamps
-    # end
-    # execute 'ALTER TABLE avatars ADD COLUMN file_contents LONGBLOB'
-    #
-    # You can optionally specify any storage table name you want and whether or not deletion is done by cascading or not as follows:
-    #   has_attached_file :avatar, :storage => :database, :database_table => 'avatar_files', :cascade_deletion => true
+    #   `execute 'ALTER TABLE paperclip_database_files ADD COLUMN file_contents LONGBLOB'`
     #
     # 3. By default, URLs will be set to this pattern:
     #   /:relative_root/:class/:attachment/:id?style=:style
@@ -61,7 +50,6 @@ module Paperclip
           attachable_class = instance.class
           setup_relation_in_attachable_class(attachable_class)
           override_default_options
-
         end
       end
 
@@ -177,9 +165,7 @@ module Paperclip
                       type: object.send("#{attachment_name}_content_type")
           end
         end
-
       end
-
     end
   end
 end
