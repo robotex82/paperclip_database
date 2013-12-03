@@ -61,6 +61,7 @@ module Paperclip
           attachable_class = instance.class
           setup_relation_in_attachable_class(attachable_class)
           override_default_options
+
         end
       end
 
@@ -160,17 +161,25 @@ module Paperclip
           base.extend(self)
         end
 
-        def downloads_files_for(model, attachment, options = {})
-          define_method("#{attachment.to_s.pluralize}") do
-            model_record = Object.const_get(model.to_s.camelize.to_sym).find(params[:id])
-            style = params[:style] ? params[:style] : 'original'
-            send_data model_record.send(attachment).file_contents(style),
-                      :filename => model_record.send("#{attachment}_file_name".to_sym),
-                      :type => model_record.send("#{attachment}_content_type".to_sym)
+        def downloads_files_for(model_name, attachment_name, options = {})
+          model_name = model_name.to_s
+          attachment_name = attachment_name.to_s.singularize
+
+          define_method("#{attachment_name.pluralize}") do
+
+            style = params[:style] || 'original'
+
+            object = model_name.classify.constantize.send(:find, params[:id])
+            attachment = object.send(attachment_name)
+
+            send_data attachment.file_contents(style),
+                      filename: object.send("#{attachment_name}_file_name"),
+                      type: object.send("#{attachment_name}_content_type")
           end
         end
+
       end
+
     end
   end
-
 end
