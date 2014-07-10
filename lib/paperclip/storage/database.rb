@@ -140,32 +140,10 @@ module Paperclip
       end
 
       def override_default_options
-        @options[:url] = ":relative_root/:class/:attachment/:id?style=:style" if (@options[:url] == self.class.default_options[:url])
+        @options[:url] = ":relative_root/:class/:attachment/:id?style=:style&paperclip_database=1" if (@options[:url] == self.class.default_options[:url])
         @options[:path] = ":database_path"
       end
 
-      module ControllerClassMethods
-        def self.included(base)
-          base.extend(self)
-        end
-
-        def downloads_files_for(model_name, attachment_name, options = {})
-          model_name = model_name.to_s
-          attachment_name = attachment_name.to_s.singularize
-
-          define_method("#{attachment_name.pluralize}") do
-
-            style = params[:style] || 'original'
-
-            object = model_name.classify.constantize.send(:find, params[:id])
-            attachment = object.send(attachment_name)
-
-            send_data attachment.file_contents(style),
-                      filename: object.send("#{attachment_name}_file_name"),
-                      type: object.send("#{attachment_name}_content_type")
-          end
-        end
-      end
     end
   end
 end
