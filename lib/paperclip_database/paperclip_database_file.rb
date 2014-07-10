@@ -1,5 +1,6 @@
 module PaperclipDatabase
   class PaperclipDatabaseFile < ActiveRecord::Base
+    belongs_to :attachable, polymorphic: true
 
     validates_uniqueness_of :style, scope: [:attachable_id, :attachable_type, :attachable_name]
 
