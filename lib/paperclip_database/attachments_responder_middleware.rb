@@ -24,10 +24,11 @@ module PaperclipDatabase
 
       object = klass_name.classify.constantize.send(:find, id)
       attachment = object.send(attachment_name.singularize)
+      file_name = object.send("#{attachment_name.singularize}_file_name")
 
       [
           200,
-          {'Content-Type' => attachment.content_type, 'Content-Disposition' => 'inline'},
+          {'Content-Type' => attachment.content_type, 'Content-Disposition' => "inline; filename=#{file_name}"},
           [attachment.file_contents(style)]
       ]
     end
