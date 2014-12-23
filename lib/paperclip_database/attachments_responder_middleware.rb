@@ -22,14 +22,14 @@ module PaperclipDatabase
       id, attachment_name, klass_name = env['PATH_INFO'].split('/').reverse
       style = Rack::Utils.parse_query(env['QUERY_STRING'], '&')['style']
 
-      object = klass_name.classify.constantize.send(:find, id)
-      attachment = object.send(attachment_name.singularize)
-      file_name = object.send("#{attachment_name.singularize}_file_name")
+      model = klass_name.classify.constantize.send(:find, id)
+      paperclip_attachment = model.send(attachment_name.singularize)
+      file_name = model.send("#{attachment_name.singularize}_file_name")
 
       [
           200,
-          {'Content-Type' => attachment.content_type, 'Content-Disposition' => "inline; filename=#{file_name}"},
-          [attachment.file_contents(style)]
+          {'Content-Type' => paperclip_attachment.content_type, 'Content-Disposition' => "inline; filename=#{file_name}"},
+          [paperclip_attachment.file_contents(style)]
       ]
     end
 
