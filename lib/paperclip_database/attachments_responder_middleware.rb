@@ -19,7 +19,9 @@ module PaperclipDatabase
     end
 
     def send_image(env)
-      id, attachment_name, klass_name = env['PATH_INFO'].split('/').reverse
+      id, attachment_name, *klass_name =  env['PATH_INFO'].split('/').reverse
+
+      klass_name = klass_name.reverse.reject!(&:blank?).join("_")
       style = Rack::Utils.parse_query(env['QUERY_STRING'], '&')['style']
 
       model = klass_name.classify.constantize.send(:find, id)
