@@ -140,7 +140,7 @@ module Paperclip
       end
 
       def override_default_options
-        @options[:url] = ":relative_root/:class/:attachment/:id?style=:style&paperclip_database=1" if (@options[:url] == self.class.default_options[:url])
+        @options[:url] = ":relative_root/:class/:attachment/:param?style=:style&paperclip_database=1" if (@options[:url] == self.class.default_options[:url])
         @options[:path] = ":database_path"
       end
 
