@@ -5,8 +5,12 @@ module PaperclipDatabase
       @app = app
     end
 
-    def call(env)
-      return send_image(env) if paperclip_database_request?(env)
+    def call(env)  
+      if paperclip_database_request?(env)
+        before_send_image = PaperclipDatabase::Configuration.before_send_image.call(self, env)
+        return before_send_image unless before_send_image === true
+        return send_image(env)
+      end
 
       @app.call(env)
     end
@@ -19,13 +23,13 @@ module PaperclipDatabase
     end
 
     def send_image(env)
-      id, attachment_name, *klass_name =  env['PATH_INFO'].split('/').reverse
-
-      klass_name = klass_name.reverse.reject!(&:blank?).join('/').camelize
+      id, attachment_name, klass_name = env['PATH_INFO'].split('/').reverse
       style = Rack::Utils.parse_query(env['QUERY_STRING'], '&')['style']
 
       model = klass_name.classify.constantize.send(:find, id)
+# raise model.inspect      
       paperclip_attachment = model.send(attachment_name.singularize)
+# raise paperclip_attachment.inspect      
       file_name = model.send("#{attachment_name.singularize}_file_name")
 
       [
