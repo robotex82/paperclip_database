@@ -26,10 +26,8 @@ module PaperclipDatabase
       id, attachment_name, klass_name = env['PATH_INFO'].split('/').reverse
       style = Rack::Utils.parse_query(env['QUERY_STRING'], '&')['style']
 
-      model = klass_name.classify.constantize.send(:find, id)
-# raise model.inspect      
-      paperclip_attachment = model.send(attachment_name.singularize)
-# raise paperclip_attachment.inspect      
+      model = klass_name.classify.constantize.send(:find, id)  
+      paperclip_attachment = model.send(attachment_name.singularize)    
       file_name = model.send("#{attachment_name.singularize}_file_name")
 
       [
