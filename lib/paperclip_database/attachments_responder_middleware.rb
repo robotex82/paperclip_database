@@ -21,10 +21,12 @@ module PaperclipDatabase
     def send_image(env)
       id, attachment_name, *klass_name =  env['PATH_INFO'].split('/').reverse
 
-      klass_name = klass_name.reverse.reject!(&:blank?).join('/').camelize
+      klass_name = klass_name.reverse.reject!(&:blank?).join('/').camelize.classify
       style = Rack::Utils.parse_query(env['QUERY_STRING'], '&')['style']
 
-      model = klass_name.classify.constantize.send(:find, id)
+      scope = PaperclipDatabase::Configuration.find_scope.call(klass_name)
+
+      model = scope.send(:find, id)
       paperclip_attachment = model.send(attachment_name.singularize)
       file_name = model.send("#{attachment_name.singularize}_file_name")
 
