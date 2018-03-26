@@ -112,6 +112,8 @@ module Paperclip
               paperclip_file = instance.paperclip_database_files.send(:find_or_create_by_style_and_attachable_name, style, name)
             when /^4/
               paperclip_file = instance.paperclip_database_files.send(:find_or_create_by, style: style, attachable_name: name)
+            when /^5/
+              paperclip_file = instance.paperclip_database_files.send(:find_or_create_by, style: style, attachable_name: name)
             else
               raise "Rails version #{Rails::VERSION::STRING} is not supported (yet)"
           end
