@@ -137,8 +137,14 @@ module Paperclip
       private
 
       def setup_relation_in_attachable_class(klass)
-        klass.has_many :paperclip_database_files, as: :attachable, dependent: :destroy,
-                       class_name: PaperclipDatabase::PaperclipDatabaseFile.to_s
+        case Rails::VERSION::STRING
+          when /^5/
+            klass.has_many :paperclip_database_files, as: :attachable,
+                           class_name: PaperclipDatabase::PaperclipDatabaseFile.to_s
+          else
+            klass.has_many :paperclip_database_files, as: :attachable, dependent: :destroy,
+                           class_name: PaperclipDatabase::PaperclipDatabaseFile.to_s
+          end
       end
 
       def override_default_options
